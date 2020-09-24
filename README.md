@@ -1,4 +1,4 @@
-# url-parser
+# config
 
 in order to parse data from .env file in it, they must be presented in the following form:
 * SQL: "sql://username:password@hostname.with.domain:5432/schema"
