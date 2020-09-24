@@ -7,7 +7,7 @@ import (
 	"net/url"
 	"strings"
 )
-
+//init system
 func Init() error {
 	if err := godotenv.Load(); err != nil {
 		return err
