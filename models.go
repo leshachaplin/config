@@ -42,8 +42,3 @@ type Secret struct {
 type MongoDB struct {
 	ConnectionString string
 }
-
-type GRPC struct {
-	Host string
-	Port string
-}

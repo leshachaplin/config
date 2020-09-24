@@ -1,63 +1,77 @@
 package main
 
 import (
-	"encoding/json"
-	"fmt"
-	"github.com/joho/godotenv"
+	"errors"
 	"net/url"
 	"strings"
 )
-//init system
-func Init() error {
-	if err := godotenv.Load(); err != nil {
-		return err
-	}
-	return nil
-}
 
-func GetSQL(sqlUrl string) (Sql, error) {
+// convert result from resolve to sql structure type
+func GetSQL(sqlUrl string) (*Sql, error) {
 	res, err := resolve(sqlUrl)
-	return res.(Sql), err
+	sql, ok := res.(Sql)
+	if !ok {
+		return nil, errors.New("your should use other method to parse this url or use other url")
+	}
+	return &sql, err
 }
 
-func GetGRPC(grpcUrl string) (GRPC, error) {
-	res, err := resolve(grpcUrl)
-	return res.(GRPC), err
-}
-
-func GetSecret(secretUrl string) (Secret, error) {
+// convert result from resolve to secretApiKey structure type
+func GetSecret(secretUrl string) (*Secret, error) {
 	res, err := resolve(secretUrl)
-	return res.(Secret), err
+	secret, ok := res.(Secret)
+	if !ok {
+		return nil, errors.New("your should use other method to parse this url or use other url")
+	}
+	return &secret, err
 }
 
-func GetMongo(mongoUrl string) (MongoDB, error) {
+// convert result from resolve to mongo structure type
+func GetMongo(mongoUrl string) (*MongoDB, error) {
 	res, err := resolve(mongoUrl)
-	return res.(MongoDB), err
+	mongo, ok := res.(MongoDB)
+	if !ok {
+		return nil, errors.New("your should use other method to parse this url or use other url")
+	}
+	return &mongo, err
 }
 
-func GetSMTP(smtpUrl string) (SMTP, error) {
+// convert result from resolve to smtp structure type
+func GetSMTP(smtpUrl string) (*SMTP, error) {
 	res, err := resolve(smtpUrl)
-	return res.(SMTP), err
+	smtp, ok := res.(SMTP)
+	if !ok {
+		return nil, errors.New("your should use other method to parse this url or use other url")
+	}
+	return &smtp, err
 }
 
-func GetKafka(kafkaUrl string) (Kafka, error) {
+// convert result from resolve to kafka structure type
+func GetKafka(kafkaUrl string) (*Kafka, error) {
 	res, err := resolve(kafkaUrl)
-	return res.(Kafka), err
+	kafka, ok := res.(Kafka)
+	if !ok {
+		return nil, errors.New("your should use other method to parse this url or use other url")
+	}
+	return &kafka, err
 }
 
-func GetRedis(redisUrl string) (Redis, error) {
+// convert result from resolve to redis structure type
+func GetRedis(redisUrl string) (*Redis, error) {
 	res, err := resolve(redisUrl)
-	return res.(Redis), err
+	redis, ok := res.(Redis)
+	if !ok {
+		return nil, errors.New("your should use other method to parse this url or use other url")
+	}
+	return &redis, err
 }
 
+//parse connection url in to a specific structure that is indicated in the url scheme
 func resolve(sqlUrl string) (interface{}, error) {
 	data, err := url.Parse(sqlUrl)
 	if err != nil {
 		return nil, err
 	}
-
-	a, _ := json.Marshal(data)
-	fmt.Println(string(a))
 
 	switch data.Scheme {
 	case "sql":
@@ -112,14 +126,6 @@ func resolve(sqlUrl string) (interface{}, error) {
 			res.ApiKey = key
 			res.ApiHost = strings.Split(data.Host, ":")[0]
 			res.ApiPort = strings.Split(data.Host, ":")[1]
-
-			return res, nil
-		}
-	case "grpc":
-		{
-			res := GRPC{}
-			res.Host = strings.Split(data.Host, ":")[0]
-			res.Port = strings.Split(data.Host, ":")[1]
 
 			return res, nil
 		}
