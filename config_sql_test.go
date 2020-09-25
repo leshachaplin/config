@@ -11,12 +11,12 @@ func TestSQL(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	expected := Sql{
+	expected := SQL{
 		Username: "lesha",
 		Password: "su",
 		DB:       "books",
 		Host:     "localhost",
-		Port:     "5432",
+		Port:     5432,
 		Schema:   "postgres",
 	}
 	assert.Equal(t, expected, *actual)

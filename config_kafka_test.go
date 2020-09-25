@@ -15,7 +15,7 @@ func TestKafkaResolve(t *testing.T) {
 		Host:  "localhost",
 		Topic: "library",
 		Group: "books",
-		Port:  "9092",
+		Port:  9092,
 	}
 	assert.Equal(t, expected, *actual)
 }

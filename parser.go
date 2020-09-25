@@ -3,22 +3,26 @@ package main
 import (
 	"errors"
 	"net/url"
+	"strconv"
 	"strings"
 )
 
-// convert result from resolve to sql structure type
-func GetSQL(sqlUrl string) (*Sql, error) {
-	res, err := resolve(sqlUrl)
-	sql, ok := res.(Sql)
+// GetSQL converts result from resolve to sql structure type
+func GetSQL(sqlURL string) (*SQL, error) {
+	res, err := resolve(sqlURL)
+	if err != nil {
+		return nil, err
+	}
+	sql, ok := res.(SQL)
 	if !ok {
 		return nil, errors.New("your should use other method to parse this url or use other url")
 	}
-	return &sql, err
+	return &sql, nil
 }
 
-// convert result from resolve to secretApiKey structure type
-func GetSecret(secretUrl string) (*Secret, error) {
-	res, err := resolve(secretUrl)
+// GetSecret converts result from resolve to secretApiKey structure type
+func GetSecret(secretURL string) (*Secret, error) {
+	res, err := resolve(secretURL)
 	secret, ok := res.(Secret)
 	if !ok {
 		return nil, errors.New("your should use other method to parse this url or use other url")
@@ -26,9 +30,9 @@ func GetSecret(secretUrl string) (*Secret, error) {
 	return &secret, err
 }
 
-// convert result from resolve to mongo structure type
-func GetMongo(mongoUrl string) (*MongoDB, error) {
-	res, err := resolve(mongoUrl)
+// GetMongo converts result from resolve to mongo structure type
+func GetMongo(mongoURL string) (*MongoDB, error) {
+	res, err := resolve(mongoURL)
 	mongo, ok := res.(MongoDB)
 	if !ok {
 		return nil, errors.New("your should use other method to parse this url or use other url")
@@ -36,39 +40,48 @@ func GetMongo(mongoUrl string) (*MongoDB, error) {
 	return &mongo, err
 }
 
-// convert result from resolve to smtp structure type
-func GetSMTP(smtpUrl string) (*SMTP, error) {
-	res, err := resolve(smtpUrl)
+// GetSMTP converts result from resolve to smtp structure type
+func GetSMTP(smtpURL string) (*SMTP, error) {
+	res, err := resolve(smtpURL)
+	if err != nil {
+		return nil, err
+	}
 	smtp, ok := res.(SMTP)
 	if !ok {
 		return nil, errors.New("your should use other method to parse this url or use other url")
 	}
-	return &smtp, err
+	return &smtp, nil
 }
 
-// convert result from resolve to kafka structure type
-func GetKafka(kafkaUrl string) (*Kafka, error) {
-	res, err := resolve(kafkaUrl)
+// GetKafka converts result from resolve to kafka structure type
+func GetKafka(kafkaURL string) (*Kafka, error) {
+	res, err := resolve(kafkaURL)
+	if err != nil {
+		return nil, err
+	}
 	kafka, ok := res.(Kafka)
 	if !ok {
 		return nil, errors.New("your should use other method to parse this url or use other url")
 	}
-	return &kafka, err
+	return &kafka, nil
 }
 
-// convert result from resolve to redis structure type
-func GetRedis(redisUrl string) (*Redis, error) {
-	res, err := resolve(redisUrl)
+// GetRedis convert result from resolve to redis structure type
+func GetRedis(redisURL string) (*Redis, error) {
+	res, err := resolve(redisURL)
+	if err != nil {
+		return nil, err
+	}
 	redis, ok := res.(Redis)
 	if !ok {
 		return nil, errors.New("your should use other method to parse this url or use other url")
 	}
-	return &redis, err
+	return &redis, nil
 }
 
-//parse connection url in to a specific structure that is indicated in the url scheme
-func resolve(sqlUrl string) (interface{}, error) {
-	data, err := url.Parse(sqlUrl)
+// resolve parse connection url in to a specific structure that is indicated in the url scheme
+func resolve(URL string) (interface{}, error) {
+	data, err := url.Parse(URL)
 	if err != nil {
 		return nil, err
 	}
@@ -76,56 +89,88 @@ func resolve(sqlUrl string) (interface{}, error) {
 	switch data.Scheme {
 	case "sql":
 		{
-			res := Sql{}
+			res := SQL{}
 			path := strings.Split(data.Path, "/")[1:]
-			res.Username = data.User.Username()
-			res.Password, _ = data.User.Password()
-			res.Schema = path[0]
-			res.Host = strings.Split(data.Host, ":")[0]
-			res.Port = strings.Split(data.Host, ":")[1]
-			res.DB = path[1]
+			if strings.ContainsAny(data.Host, ":") {
+				res.Username = data.User.Username()
+				res.Password, _ = data.User.Password()
+				res.Schema = path[0]
+				res.DB = path[1]
+				res.Host = strings.Split(data.Host, ":")[0]
+				res.Port, err = strconv.Atoi(strings.Split(data.Host, ":")[1])
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				err = errors.New("url doesn't contain port")
+				return nil, err
+			}
 			return res, nil
 		}
 	case "kafka":
 		{
 			group, _ := data.User.Password()
 			res := Kafka{}
-			res.Topic = data.User.Username()
-			res.Host = strings.Split(data.Host, ":")[0]
-			res.Port = strings.Split(data.Host, ":")[1]
-			res.Group = group
+			if strings.ContainsAny(data.Host, ":") {
+				res.Topic = data.User.Username()
+				res.Host = strings.Split(data.Host, ":")[0]
+				res.Port, err = strconv.Atoi(strings.Split(data.Host, ":")[1])
+				if err != nil {
+					return nil, err
+				}
+				res.Group = group
+			} else {
+				err = errors.New("url doesn't contain port")
+				return nil, err
+			}
 			return res, nil
 		}
 	case "redis":
 		{
 			res := Redis{}
-			res.Username = data.User.Username()
-			res.Password, _ = data.User.Password()
-			res.Host = strings.Split(data.Host, ":")[0]
-			res.Port = strings.Split(data.Host, ":")[1]
+			if strings.ContainsAny(data.Host, ":") {
+				res.Username = data.User.Username()
+				res.Password, _ = data.User.Password()
+				res.Host = strings.Split(data.Host, ":")[0]
+				res.Port, err = strconv.Atoi(strings.Split(data.Host, ":")[1])
+				if err != nil {
+					return nil, err
+				}
+				res.IsCluster, err = strconv.ParseBool(strings.Split(data.RawQuery, "=")[1])
+				if err != nil {
+					return nil, err
+				}
+			} else {
+				err = errors.New("url doesn't contain port")
+				return nil, err
+			}
 			return res, nil
 		}
 	case "smtp":
 		{
 			res := SMTP{}
-			res.Username = data.User.Username()
-			res.Password, _ = data.User.Password()
 			path := strings.Split(data.Path, "/")[1:]
-			res.Host = strings.Split(data.Host, ":")[0]
-			res.Port = strings.Split(data.Host, ":")[1]
-			res.Email = path[0]
-			res.SSL = path[1]
+			if strings.ContainsAny(data.Host, ":") {
+				res.Username = data.User.Username()
+				res.Password, _ = data.User.Password()
+				res.Host = strings.Split(data.Host, ":")[0]
+				res.Port, err = strconv.Atoi(strings.Split(data.Host, ":")[1])
+				if err != nil {
+					return nil, err
+				}
+				res.Email = path[0]
+				res.SSL = path[1]
+			} else {
+				err = errors.New("url doesn't contain port")
+				return nil, err
+			}
 
 			return res, nil
 		}
 	case "secret":
 		{
-			key, _ := data.User.Password()
 			res := Secret{}
-			res.Username = data.User.Username()
-			res.ApiKey = key
-			res.ApiHost = strings.Split(data.Host, ":")[0]
-			res.ApiPort = strings.Split(data.Host, ":")[1]
+			res.ApiKey = data.Host
 
 			return res, nil
 		}

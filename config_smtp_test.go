@@ -15,7 +15,7 @@ func TestSMTPResolve(t *testing.T) {
 		Username: "lesha.chaplin@gmail.com",
 		Password: "su",
 		Host:     "smtp.gmail.com",
-		Port:     "443",
+		Port:     443,
 		SSL:      "disable",
 		Email:    "lesha.chaplin@gmail.com",
 	}
