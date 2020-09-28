@@ -2,14 +2,32 @@ package main
 
 import (
 	"errors"
+	"github.com/aws/aws-sdk-go/aws"
+	"github.com/aws/aws-sdk-go/aws/session"
+	"github.com/aws/aws-sdk-go/service/ssm"
 	"net/url"
 	"strconv"
 	"strings"
 )
 
+type Config struct {
+	conn *ssm.SSM
+}
+
+func New(awsRegion string) (*Config, error) {
+	sess, err := session.NewSession(&aws.Config{
+		Region: aws.String(awsRegion)},
+	)
+	if err != nil {
+		return nil, err
+	}
+
+	return &Config{conn: ssm.New(sess)}, nil
+}
+
 // GetSQL converts result from resolve to sql structure type
-func GetSQL(sqlURL string) (*SQL, error) {
-	res, err := resolve(sqlURL)
+func (c *Config) GetSQL(sqlURL string) (*SQL, error) {
+	res, err := c.resolve(sqlURL)
 	if err != nil {
 		return nil, err
 	}
@@ -21,8 +39,8 @@ func GetSQL(sqlURL string) (*SQL, error) {
 }
 
 // GetSecret converts result from resolve to secretApiKey structure type
-func GetSecret(secretURL string) (*Secret, error) {
-	res, err := resolve(secretURL)
+func (c *Config) GetSecret(secretURL string) (*Secret, error) {
+	res, err := c.resolve(secretURL)
 	secret, ok := res.(Secret)
 	if !ok {
 		return nil, errors.New("your should use other method to parse this url or use other url")
@@ -31,8 +49,8 @@ func GetSecret(secretURL string) (*Secret, error) {
 }
 
 // GetMongo converts result from resolve to mongo structure type
-func GetMongo(mongoURL string) (*MongoDB, error) {
-	res, err := resolve(mongoURL)
+func (c *Config) GetMongo(mongoURL string) (*MongoDB, error) {
+	res, err := c.resolve(mongoURL)
 	mongo, ok := res.(MongoDB)
 	if !ok {
 		return nil, errors.New("your should use other method to parse this url or use other url")
@@ -41,8 +59,8 @@ func GetMongo(mongoURL string) (*MongoDB, error) {
 }
 
 // GetSMTP converts result from resolve to smtp structure type
-func GetSMTP(smtpURL string) (*SMTP, error) {
-	res, err := resolve(smtpURL)
+func (c *Config) GetSMTP(smtpURL string) (*SMTP, error) {
+	res, err := c.resolve(smtpURL)
 	if err != nil {
 		return nil, err
 	}
@@ -54,8 +72,8 @@ func GetSMTP(smtpURL string) (*SMTP, error) {
 }
 
 // GetKafka converts result from resolve to kafka structure type
-func GetKafka(kafkaURL string) (*Kafka, error) {
-	res, err := resolve(kafkaURL)
+func (c *Config) GetKafka(kafkaURL string) (*Kafka, error) {
+	res, err := c.resolve(kafkaURL)
 	if err != nil {
 		return nil, err
 	}
@@ -67,8 +85,8 @@ func GetKafka(kafkaURL string) (*Kafka, error) {
 }
 
 // GetRedis convert result from resolve to redis structure type
-func GetRedis(redisURL string) (*Redis, error) {
-	res, err := resolve(redisURL)
+func (c *Config) GetRedis(redisURL string) (*Redis, error) {
+	res, err := c.resolve(redisURL)
 	if err != nil {
 		return nil, err
 	}
@@ -79,16 +97,28 @@ func GetRedis(redisURL string) (*Redis, error) {
 	return &redis, nil
 }
 
-// resolve parse connection url in to a specific structure that is indicated in the url scheme
-func resolve(URL string) (interface{}, error) {
-	data, err := url.Parse(URL)
+// Resolve parse connection url in to a specific structure that is indicated in the url scheme
+func (c *Config) resolve(URL string) (interface{}, error) {
+
+	awsURL, err := url.Parse(URL)
+	if err != nil {
+		return nil, err
+	}
+	param := ssm.GetParameterInput{}
+	param.SetName(awsURL.Host)
+	param.SetWithDecryption(true)
+	paramOut, err := c.conn.GetParameter(&param)
 	if err != nil {
 		return nil, err
 	}
 
-	switch data.Scheme {
-	case "sql":
+	switch awsURL.Scheme {
+	case "aws-ssm-sql":
 		{
+			data, err := url.Parse(*paramOut.Parameter.Value)
+			if err != nil {
+				return nil, err
+			}
 			res := SQL{}
 			path := strings.Split(data.Path, "/")[1:]
 			if strings.ContainsAny(data.Host, ":") {
@@ -107,8 +137,12 @@ func resolve(URL string) (interface{}, error) {
 			}
 			return res, nil
 		}
-	case "kafka":
+	case "aws-ssm-kafka":
 		{
+			data, err := url.Parse(*paramOut.Parameter.Value)
+			if err != nil {
+				return nil, err
+			}
 			group, _ := data.User.Password()
 			res := Kafka{}
 			if strings.ContainsAny(data.Host, ":") {
@@ -125,8 +159,12 @@ func resolve(URL string) (interface{}, error) {
 			}
 			return res, nil
 		}
-	case "redis":
+	case "aws-ssm-redis":
 		{
+			data, err := url.Parse(*paramOut.Parameter.Value)
+			if err != nil {
+				return nil, err
+			}
 			res := Redis{}
 			if strings.ContainsAny(data.Host, ":") {
 				res.Username = data.User.Username()
@@ -146,8 +184,12 @@ func resolve(URL string) (interface{}, error) {
 			}
 			return res, nil
 		}
-	case "smtp":
+	case "aws-ssm-smtp":
 		{
+			data, err := url.Parse(*paramOut.Parameter.Value)
+			if err != nil {
+				return nil, err
+			}
 			res := SMTP{}
 			path := strings.Split(data.Path, "/")[1:]
 			if strings.ContainsAny(data.Host, ":") {
@@ -167,15 +209,23 @@ func resolve(URL string) (interface{}, error) {
 
 			return res, nil
 		}
-	case "secret":
+	case "aws-ssm-secret":
 		{
+			data, err := url.Parse(*paramOut.Parameter.Value)
+			if err != nil {
+				return nil, err
+			}
 			res := Secret{}
 			res.ApiKey = data.Host
 
 			return res, nil
 		}
-	case "mongo":
+	case "aws-ssm-mongo":
 		{
+			data, err := url.Parse(*paramOut.Parameter.Value)
+			if err != nil {
+				return nil, err
+			}
 			res := MongoDB{}
 			res.ConnectionString = "mongodb://" + data.Host
 

@@ -6,8 +6,12 @@ import (
 )
 
 func TestSQL(t *testing.T) {
-	url := "sql://lesha:su@localhost:5432/postgres/books"
-	actual, err := GetSQL(url)
+	url := "aws-ssm-sql://SQL/"
+	s, err := New("us-west-2")
+	if err != nil {
+		t.Error(err)
+	}
+	actual, err := s.GetSQL(url)
 	if err != nil {
 		t.Error(err)
 	}

@@ -6,8 +6,12 @@ import (
 )
 
 func TestSMTPResolve(t *testing.T) {
-	url := "smtp://lesha.chaplin@gmail.com:su@smtp.gmail.com:443/lesha.chaplin@gmail.com/disable"
-	actual, err := GetSMTP(url)
+	url := "aws-ssm-smtp://SMTP/"
+	s, err := New("us-west-2")
+	if err != nil {
+		t.Error(err)
+	}
+	actual, err := s.GetSMTP(url)
 	if err != nil {
 		t.Error(err)
 	}

@@ -6,8 +6,12 @@ import (
 )
 
 func TestRedisResolve(t *testing.T) {
-	url := "redis://lesha:chaplin@localhost:6379/?isCluster=true"
-	actual, err := GetRedis(url)
+	url := "aws-ssm-redis://Redis/"
+	s, err := New("us-west-2")
+	if err != nil {
+		t.Error(err)
+	}
+	actual, err := s.GetRedis(url)
 	if err != nil {
 		t.Error(err)
 	}
