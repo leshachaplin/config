@@ -5,9 +5,13 @@ import (
 	"testing"
 )
 
-func TestSQL(t *testing.T) {
-	url := "sql://lesha:su@localhost:5432/postgres/books"
-	actual, err := GetSQL(url)
+func TestSQLAws(t *testing.T) {
+	url := "aws-ssm-sql://SQL/"
+	s, err := NewForAws("us-west-2")
+	if err != nil {
+		t.Error(err)
+	}
+	actual, err := s.GetSQL(url)
 	if err != nil {
 		t.Error(err)
 	}

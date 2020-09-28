@@ -5,9 +5,13 @@ import (
 	"testing"
 )
 
-func TestKafkaResolve(t *testing.T) {
-	url := "kafka://library:books@localhost:9092/"
-	actual, err := GetKafka(url)
+func TestKafkaAws(t *testing.T) {
+	url := "aws-ssm-kafka://Kafka/"
+	s, err := NewForAws("us-west-2")
+	if err != nil {
+		t.Error(err)
+	}
+	actual, err := s.GetKafka(url)
 	if err != nil {
 		t.Error(err)
 	}

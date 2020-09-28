@@ -5,9 +5,13 @@ import (
 	"testing"
 )
 
-func TestSecret(t *testing.T) {
-	url := "secret://chaplin/"
-	actual, err := GetSecret(url)
+func TestSecretAws(t *testing.T) {
+	url := "aws-ssm-secret://Secret/"
+	s, err := NewForAws("us-west-2")
+	if err != nil {
+		t.Error(err)
+	}
+	actual, err := s.GetSecret(url)
 	if err != nil {
 		t.Error(err)
 	}

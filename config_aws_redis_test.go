@@ -5,9 +5,13 @@ import (
 	"testing"
 )
 
-func TestRedisResolve(t *testing.T) {
-	url := "redis://lesha:chaplin@localhost:6379/?isCluster=true"
-	actual, err := GetRedis(url)
+func TestRedisAws(t *testing.T) {
+	url := "aws-ssm-redis://Redis/"
+	s, err := NewForAws("us-west-2")
+	if err != nil {
+		t.Error(err)
+	}
+	actual, err := s.GetRedis(url)
 	if err != nil {
 		t.Error(err)
 	}

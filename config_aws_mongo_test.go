@@ -5,9 +5,13 @@ import (
 	"testing"
 )
 
-func TestMongo(t *testing.T) {
-	url := "mongo://localhost:27017/"
-	actual, err := GetMongo(url)
+func TestMongoAws(t *testing.T) {
+	url := "aws-ssm-mongo://Mongo/"
+	s, err := NewForAws("us-west-2")
+	if err != nil {
+		t.Error(err)
+	}
+	actual, err := s.GetMongo(url)
 	if err != nil {
 		t.Error(err)
 	}
