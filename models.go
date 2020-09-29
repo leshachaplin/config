@@ -1,4 +1,4 @@
-package main
+package config
 
 // SQL type with sql connection data
 type SQL struct {
