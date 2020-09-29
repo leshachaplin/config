@@ -10,10 +10,12 @@ import (
 	"strings"
 )
 
+// ConfigAws struct which contain connection struct to aws service manager
 type ConfigAws struct {
 	conn *ssm.SSM
 }
 
+// NewForAws create new ConfigAws and initialize their field
 func NewForAws(awsRegion string) (*ConfigAws, error) {
 	sess, err := session.NewSession(&aws.Config{
 		Region: aws.String(awsRegion)},

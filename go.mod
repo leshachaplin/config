@@ -1,4 +1,4 @@
-module github.com/leshachaplin/url-parser
+module github.com/leshachaplin/config
 
 go 1.15
 
